@@ -31,10 +31,10 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-const baseUrl = 'https://login.redone.com.my/OneLoginHost/core';
+const baseUrl = 'https://devlogin.redone.com.my/OneLoginHost/core';
 const clientId = 'redcash2.web';
 const clientSecret = 'MCU84XNYTP5SA9OOS9I1';
-const redirectUri = 'https://uat-cep-redcash.arkmind-dev.com/redCash/api/v1.0/partner/sso/redirect';
+const redirectUri = 'https://uat-cep-redcash-2.arkmind-dev.com/redCash/api/v1.0/partner/sso/redirect';
 const defaultScopes = 'openid profile';
 const issuerHost = baseUrl;
 
