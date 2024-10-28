@@ -26,6 +26,16 @@
             "date": 1729835822283,
             "name": "logs/2024-10-25.log",
             "hash": "5558ee1ed1fadd94da098c33b571ae8c"
+        },
+        {
+            "date": 1730083952827,
+            "name": "logs\\2024-10-28-error.log",
+            "hash": "8b036d7a0c416191aebf21ca44365841"
+        },
+        {
+            "date": 1730083952838,
+            "name": "logs\\2024-10-28.log",
+            "hash": "7be22b14b9f260d02cc89ea76a2364f9"
         }
     ]
 }

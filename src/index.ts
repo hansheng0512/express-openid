@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, {Request, Response} from 'express';
 import session from 'express-session';
 import passport from 'passport';
 import {Profile, Strategy as OpenIDConnectStrategy, VerifyCallback} from 'passport-openidconnect';
@@ -15,7 +15,7 @@ const app = express();
 
 app.use(compression())
 app.use(useragent.express())
-app.use(cors({ origin: '*' }))
+app.use(cors({origin: '*'}))
 app.use(express.json())
 
 let user: any
@@ -50,16 +50,13 @@ passport.use(
       clientSecret: clientSecret,
       callbackURL: redirectUri,
       scope: defaultScopes,
+      responseMode: 'query',
     },
     (
       issuer: string,
       profile: Profile,
       cb: VerifyCallback
     ) => {
-      // Store user and tokens in session
-      // req.session.user = profile;
-      // req.session.accessToken = accessToken;
-      // req.session.refreshToken = refreshToken;
       console.log('profile', profile);
       console.log('issuer', issuer);
       user = profile;
@@ -96,7 +93,11 @@ app.get('/auth/error', (req, res) => {
 });
 
 // Middleware to check authentication
-function isAuthenticated(req: express.Request, res: express.Response, next: express.NextFunction) {
+function isAuthenticated(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
   if (req.isAuthenticated()) {
     return next();
   }
@@ -104,15 +105,48 @@ function isAuthenticated(req: express.Request, res: express.Response, next: expr
 }
 
 // Protected route
-app.get('/', isAuthenticated, (req, res) => {
-  res.json(user);
-});
-
-app.get('/profile', (req, res) => {
+app.get('/', isAuthenticated, (req: any, res) => {
   res.json({
-    message: user,
+    user: req?.user?.profile,
+    accessToken: req?.user?.accessToken,
   });
 });
+
+app.get('/profile', isAuthenticated, (req, res) => {
+  res.json({
+    message: req.user,
+  });
+});
+const logStream = FileStreamRotator.getStream({
+  filename: path.join('logs', '%DATE%.log'),
+  frequency: 'daily',
+  verbose: false,
+  date_format: 'YYYY-MM-DD',
+});
+morgan.token("body", (req: Request, res: Response) => JSON.stringify(req.body));
+morgan.token("malaysiaTimezone", (req: Request, res: Response) =>
+  moment().format("YYYY-MM-DD, HH:mm:ss")
+);
+const loggingFormat =
+  ":malaysiaTimezone :remote-addr :method :url :status :body";
+app.use(morgan(loggingFormat));
+app.use(
+  morgan(loggingFormat, {
+    stream: logStream,
+  })
+);
+
+// Override console.log to write into the same log file
+const originalConsoleLog = console.log;
+console.log = function (...args: any[]) {
+  originalConsoleLog(...args); // Keep default behavior (console output)
+  const logMessage = args
+    .map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)))
+    .join(' ');
+  logStream.write(
+    `${moment().format('YYYY-MM-DD, HH:mm:ss')} - LOG: ${logMessage}\n`
+  );
+};
 
 // Override console.error to log into a file
 const errorLogStream = FileStreamRotator.getStream({
@@ -125,27 +159,12 @@ const originalConsoleError = console.error;
 console.error = function (...args: any[]) {
   originalConsoleError(...args); // Keep default behavior (console output)
   const logMessage = args
-    .map((arg) => (typeof arg === 'string' ? arg : JSON.stringify(arg)))
-    .join(' ');
-  errorLogStream.write(`${moment().format('YYYY-MM-DD HH:mm:ss')} - ERROR: ${logMessage}\n`);
+    .map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg)))
+    .join(" ");
+  errorLogStream.write(
+    `${moment().format("YYYY-MM-DD, HH:mm:ss")} - ERROR: ${logMessage}\n`
+  );
 };
-
-morgan.token('body', (req: Request, res: Response) => JSON.stringify(req.body));
-morgan.token('malaysiaTimezone', (req: Request, res: Response) =>
-  moment().format('YYYY-MM-DD, HH:mm:ss')
-);
-const loggingFormat = ':malaysiaTimezone :remote-addr :method :url :status :body';
-app.use(morgan(loggingFormat));
-app.use(
-  morgan(loggingFormat, {
-    stream: require('file-stream-rotator').getStream({
-      filename: path.join('logs', '%DATE%.log'),
-      frequency: 'daily',
-      verbose: false,
-      date_format: 'YYYY-MM-DD',
-    }),
-  }),
-)
 
 app.listen(3000, () => {
   console.log('Server is running on http://localhost:3000');
